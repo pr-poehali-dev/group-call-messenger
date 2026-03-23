@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import Avatar from "./Avatar";
-import { MOCK_CONTACTS } from "@/data/mockData";
 
 type Participant = {
   id: string;
@@ -26,16 +25,13 @@ const CallScreen = ({ callName, isGroup, members, onEnd }: Props) => {
 
   const participants: Participant[] = [
     { id: "me", name: "Вы", muted, video: videoOn, speaking: !muted },
-    ...members.slice(0, 5).map((id) => {
-      const contact = MOCK_CONTACTS.find((c) => c.id === id);
-      return {
-        id,
-        name: contact?.name || id,
-        muted: Math.random() > 0.7,
-        video: false,
-        speaking: Math.random() > 0.6,
-      };
-    }),
+    ...members.slice(0, 5).map((id) => ({
+      id,
+      name: id,
+      muted: Math.random() > 0.7,
+      video: false,
+      speaking: Math.random() > 0.6,
+    })),
   ];
 
   useEffect(() => {
