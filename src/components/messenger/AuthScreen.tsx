@@ -56,7 +56,7 @@ const AuthScreen = ({ onAuth }: Props) => {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-5">
             <Icon name="Waves" size={28} className="text-primary" />
           </div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Волна</h1>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">+8</h1>
           <p className="text-muted-foreground text-sm mt-1">Мессенджер для групповых звонков</p>
         </div>
 
