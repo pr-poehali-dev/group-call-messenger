@@ -8,6 +8,7 @@ type Props = {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   currentUser: User;
+  isMobile?: boolean;
 };
 
 const tabs = [
@@ -17,7 +18,28 @@ const tabs = [
   { id: "profile" as Tab, icon: "User", label: "Профиль" },
 ];
 
-const Sidebar = ({ activeTab, onTabChange, currentUser }: Props) => {
+const Sidebar = ({ activeTab, onTabChange, currentUser, isMobile = false }: Props) => {
+  if (isMobile) {
+    return (
+      <div className="flex flex-row items-center justify-around px-2 py-2 bg-card border-t border-border safe-area-bottom">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
+              activeTab === tab.id
+                ? "text-primary"
+                : "text-muted-foreground"
+            }`}
+          >
+            <Icon name={tab.icon} size={22} />
+            <span className="text-[10px] font-medium leading-none">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="w-16 flex flex-col items-center py-4 bg-card border-r border-border gap-1">
       <div className="mb-4">

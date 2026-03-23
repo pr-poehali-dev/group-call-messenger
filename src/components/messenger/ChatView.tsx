@@ -9,9 +9,10 @@ type Props = {
   currentUser: User;
   onStartCall: (chat: Chat) => void;
   onSendMessage: (chatId: string, text: string, senderName: string) => Message;
+  onBack?: () => void;
 };
 
-const ChatView = ({ chat, currentUser, onStartCall, onSendMessage }: Props) => {
+const ChatView = ({ chat, currentUser, onStartCall, onSendMessage, onBack }: Props) => {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -34,8 +35,16 @@ const ChatView = ({ chat, currentUser, onStartCall, onSendMessage }: Props) => {
 
   return (
     <div className="flex-1 flex flex-col bg-background">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 py-3.5 border-b border-border">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors md:hidden"
+            >
+              <Icon name="ChevronLeft" size={20} />
+            </button>
+          )}
           <Avatar name={chat.name} size="md" />
           <div>
             <h3 className="text-sm font-semibold text-foreground">{chat.name}</h3>

@@ -31,13 +31,12 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
 
   const store = useStore(currentUser);
 
-  const syncSelectedChat = (chat: Chat) => {
-    const fresh = store.chats.find((c) => c.id === chat.id);
-    setSelectedChat(fresh || chat);
-  };
-
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
+  };
+
+  const handleBackFromChat = () => {
+    setSelectedChat(null);
   };
 
   const startCallFromChat = (chat: Chat) => {
@@ -61,6 +60,11 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
     const fresh = store.chats.find((c) => c.id === chatId);
     if (fresh) setSelectedChat(fresh);
     return msg;
+  };
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    if (tab !== "chats") setSelectedChat(null);
   };
 
   const currentChat = selectedChat
@@ -87,6 +91,7 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
             currentUser={currentUser}
             onStartCall={startCallFromChat}
             onSendMessage={handleSendMessage}
+            onBack={handleBackFromChat}
           />
         ) : (
           <EmptyState tab="chats" />
@@ -107,26 +112,74 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
     }
   };
 
+  const isChatOpen = activeTab === "chats" && !!currentChat;
+  const isCallActive = !!activeCall;
+
   return (
-    <div className="h-screen flex overflow-hidden bg-background">
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          if (tab !== "chats") setSelectedChat(null);
-        }}
-        currentUser={currentUser}
-      />
+    <div className="h-[100dvh] flex overflow-hidden bg-background">
 
-      {activeTab === "chats" && !activeCall && (
-        <ChatsPanel
-          chats={store.chats}
-          onSelectChat={handleSelectChat}
-          selectedChatId={currentChat?.id}
+      {/* Desktop layout */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          currentUser={currentUser}
+          isMobile={false}
         />
-      )}
+        {activeTab === "chats" && !activeCall && (
+          <ChatsPanel
+            chats={store.chats}
+            onSelectChat={handleSelectChat}
+            selectedChatId={currentChat?.id}
+          />
+        )}
+        {renderMainContent()}
+      </div>
 
-      {renderMainContent()}
+      {/* Mobile layout */}
+      <div className="flex md:hidden flex-1 flex-col overflow-hidden">
+        {/* Screen area */}
+        <div className="flex-1 overflow-hidden relative">
+          {isCallActive ? (
+            renderMainContent()
+          ) : activeTab === "chats" ? (
+            <>
+              {/* Chat list — hidden when chat is open */}
+              <div className={`absolute inset-0 transition-transform duration-300 ${isChatOpen ? "-translate-x-full" : "translate-x-0"}`}>
+                <ChatsPanel
+                  chats={store.chats}
+                  onSelectChat={handleSelectChat}
+                  selectedChatId={currentChat?.id}
+                />
+              </div>
+              {/* Chat view — slides in from right */}
+              <div className={`absolute inset-0 transition-transform duration-300 ${isChatOpen ? "translate-x-0" : "translate-x-full"}`}>
+                {currentChat && (
+                  <ChatView
+                    chat={currentChat}
+                    currentUser={currentUser}
+                    onStartCall={startCallFromChat}
+                    onSendMessage={handleSendMessage}
+                    onBack={handleBackFromChat}
+                  />
+                )}
+              </div>
+            </>
+          ) : (
+            renderMainContent()
+          )}
+        </div>
+
+        {/* Bottom navigation — hide when chat is open or call is active */}
+        {!isChatOpen && !isCallActive && (
+          <Sidebar
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            currentUser={currentUser}
+            isMobile={true}
+          />
+        )}
+      </div>
     </div>
   );
 };
