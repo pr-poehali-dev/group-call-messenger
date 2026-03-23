@@ -1,16 +1,16 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import Avatar from "./Avatar";
-import { Chat, MOCK_CHATS } from "@/data/mockData";
+import { Chat } from "@/data/mockData";
 
 type Props = {
+  chats: Chat[];
   onSelectChat: (chat: Chat) => void;
   selectedChatId?: string;
 };
 
-const ChatsPanel = ({ onSelectChat, selectedChatId }: Props) => {
+const ChatsPanel = ({ chats, onSelectChat, selectedChatId }: Props) => {
   const [search, setSearch] = useState("");
-  const [chats] = useState<Chat[]>(MOCK_CHATS);
 
   const filtered = chats.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
@@ -21,9 +21,6 @@ const ChatsPanel = ({ onSelectChat, selectedChatId }: Props) => {
       <div className="px-4 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-foreground">Чаты</h2>
-          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <Icon name="SquarePen" size={16} />
-          </button>
         </div>
         <div className="relative">
           <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -39,9 +36,16 @@ const ChatsPanel = ({ onSelectChat, selectedChatId }: Props) => {
 
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
-            <Icon name="SearchX" size={24} className="mb-2 opacity-40" />
-            Ничего не найдено
+          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm px-6 text-center">
+            <Icon name="MessageSquare" size={28} className="mb-3 opacity-30" />
+            {chats.length === 0 ? (
+              <>
+                <p className="font-medium text-foreground mb-1">Чатов пока нет</p>
+                <p className="text-xs">Найди людей во вкладке «Контакты» и начни диалог</p>
+              </>
+            ) : (
+              <p>Ничего не найдено</p>
+            )}
           </div>
         )}
         {filtered.map((chat) => {
@@ -53,7 +57,7 @@ const ChatsPanel = ({ onSelectChat, selectedChatId }: Props) => {
               key={chat.id}
               onClick={() => onSelectChat(chat)}
               className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/60 transition-colors text-left ${
-                selectedChatId === chat.id ? "bg-primary/8" : ""
+                selectedChatId === chat.id ? "bg-primary/8 border-r-2 border-primary" : ""
               }`}
             >
               <div className="relative">
@@ -67,11 +71,13 @@ const ChatsPanel = ({ onSelectChat, selectedChatId }: Props) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-sm font-medium text-foreground truncate">{chat.name}</span>
-                  <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">{lastMsg?.time}</span>
+                  {lastMsg && <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">{lastMsg.time}</span>}
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground truncate">
-                    {lastMsg?.senderId === "me" ? "Вы: " : ""}{lastMsg?.text}
+                    {lastMsg
+                      ? `${lastMsg.senderId === "me" ? "Вы: " : ""}${lastMsg.text}`
+                      : "Нет сообщений"}
                   </p>
                   {unread > 0 && (
                     <span className="ml-2 flex-shrink-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-[10px] font-semibold text-primary-foreground">

@@ -8,32 +8,20 @@ type Props = {
   chat: Chat;
   currentUser: User;
   onStartCall: (chat: Chat) => void;
+  onSendMessage: (chatId: string, text: string, senderName: string) => Message;
 };
 
-const ChatView = ({ chat, currentUser, onStartCall }: Props) => {
-  const [messages, setMessages] = useState<Message[]>(chat.messages);
+const ChatView = ({ chat, currentUser, onStartCall, onSendMessage }: Props) => {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMessages(chat.messages);
-  }, [chat.id]);
-
-  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [chat.messages]);
 
   const send = () => {
     if (!input.trim()) return;
-    const msg: Message = {
-      id: Date.now().toString(),
-      senderId: "me",
-      senderName: currentUser.name,
-      text: input.trim(),
-      time: new Date().toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }),
-      read: true,
-    };
-    setMessages((prev) => [...prev, msg]);
+    onSendMessage(chat.id, input.trim(), currentUser.name);
     setInput("");
   };
 
@@ -54,7 +42,7 @@ const ChatView = ({ chat, currentUser, onStartCall }: Props) => {
             {chat.isGroup ? (
               <p className="text-xs text-muted-foreground">{chat.members.length + 1} участников</p>
             ) : (
-              <p className="text-xs text-online">онлайн</p>
+              <p className="text-xs text-muted-foreground">контакт</p>
             )}
           </div>
         </div>
@@ -73,17 +61,20 @@ const ChatView = ({ chat, currentUser, onStartCall }: Props) => {
           >
             <Icon name="Video" size={17} />
           </button>
-          <button className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <Icon name="Search" size={17} />
-          </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-        {messages.map((msg, i) => {
-          const isMe = msg.senderId === "me";
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
+        {chat.messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
+            <Icon name="MessageSquare" size={28} className="mb-2 opacity-30" />
+            <p>Начните диалог</p>
+          </div>
+        )}
+        {chat.messages.map((msg, i) => {
+          const isMe = msg.senderId === currentUser.id;
           const showName = chat.isGroup && !isMe;
-          const prevMsg = messages[i - 1];
+          const prevMsg = chat.messages[i - 1];
           const gap = prevMsg && prevMsg.senderId === msg.senderId ? "mt-0.5" : "mt-3";
 
           return (

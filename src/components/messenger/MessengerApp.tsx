@@ -8,7 +8,8 @@ import ProfilePanel from "./ProfilePanel";
 import CallScreen from "./CallScreen";
 import EmptyState from "./EmptyState";
 import { User } from "@/pages/Index";
-import { Chat, MOCK_CHATS, Contact, CallRecord } from "@/data/mockData";
+import { Chat, Contact, CallRecord } from "@/data/mockData";
+import { useStore } from "@/hooks/useStore";
 
 type Tab = "chats" | "calls" | "contacts" | "profile";
 
@@ -28,29 +29,43 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
 
-  const startCallFromChat = (chat: Chat) => {
-    setActiveCall({ name: chat.name, isGroup: chat.isGroup, members: chat.members });
+  const store = useStore(currentUser);
+
+  const syncSelectedChat = (chat: Chat) => {
+    const fresh = store.chats.find((c) => c.id === chat.id);
+    setSelectedChat(fresh || chat);
   };
 
-  const startCallFromContact = (contact: Contact) => {
-    const chat = MOCK_CHATS.find((c) => c.members.includes(contact.id));
-    if (chat) {
-      setSelectedChat(chat);
-      setActiveTab("chats");
-    }
+  const handleSelectChat = (chat: Chat) => {
+    setSelectedChat(chat);
+  };
+
+  const startCallFromChat = (chat: Chat) => {
+    setActiveCall({ name: chat.name, isGroup: chat.isGroup, members: chat.members });
+    store.addCallRecord({ name: chat.name, isGroup: chat.isGroup, members: chat.members, type: "outgoing" });
+  };
+
+  const openContactChat = (contact: Contact) => {
+    const chat = store.openOrCreateChat(contact);
+    setSelectedChat(chat);
+    setActiveTab("chats");
   };
 
   const startCallFromRecord = (call: CallRecord) => {
     setActiveCall({ name: call.name, isGroup: call.isGroup, members: call.members });
+    store.addCallRecord({ name: call.name, isGroup: call.isGroup, members: call.members, type: "outgoing" });
   };
 
-  const openContactChat = (contact: Contact) => {
-    const chat = MOCK_CHATS.find((c) => c.members.includes(contact.id) && !c.isGroup);
-    if (chat) {
-      setSelectedChat(chat);
-      setActiveTab("chats");
-    }
+  const handleSendMessage = (chatId: string, text: string, senderName: string) => {
+    const msg = store.sendMessage(chatId, text, senderName);
+    const fresh = store.chats.find((c) => c.id === chatId);
+    if (fresh) setSelectedChat(fresh);
+    return msg;
   };
+
+  const currentChat = selectedChat
+    ? store.chats.find((c) => c.id === selectedChat.id) || selectedChat
+    : null;
 
   const renderMainContent = () => {
     if (activeCall) {
@@ -66,15 +81,27 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
 
     switch (activeTab) {
       case "chats":
-        return selectedChat ? (
-          <ChatView chat={selectedChat} currentUser={currentUser} onStartCall={startCallFromChat} />
+        return currentChat ? (
+          <ChatView
+            chat={currentChat}
+            currentUser={currentUser}
+            onStartCall={startCallFromChat}
+            onSendMessage={handleSendMessage}
+          />
         ) : (
           <EmptyState tab="chats" />
         );
       case "calls":
-        return <CallsPanel onStartCall={startCallFromRecord} />;
+        return <CallsPanel calls={store.calls} onStartCall={startCallFromRecord} />;
       case "contacts":
-        return <ContactsPanel onStartChat={openContactChat} />;
+        return (
+          <ContactsPanel
+            contacts={store.contacts}
+            onStartChat={openContactChat}
+            onAddContact={store.addContact}
+            getAllUsers={store.getAllRegisteredUsers}
+          />
+        );
       case "profile":
         return <ProfilePanel currentUser={currentUser} onLogout={onLogout} />;
     }
@@ -84,14 +111,18 @@ const MessengerApp = ({ currentUser, onLogout }: Props) => {
     <div className="h-screen flex overflow-hidden bg-background">
       <Sidebar
         activeTab={activeTab}
-        onTabChange={(tab) => { setActiveTab(tab); if (tab !== "chats") setSelectedChat(null); }}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (tab !== "chats") setSelectedChat(null);
+        }}
         currentUser={currentUser}
       />
 
       {activeTab === "chats" && !activeCall && (
         <ChatsPanel
-          onSelectChat={setSelectedChat}
-          selectedChatId={selectedChat?.id}
+          chats={store.chats}
+          onSelectChat={handleSelectChat}
+          selectedChatId={currentChat?.id}
         />
       )}
 
